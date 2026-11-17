@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="A home for sports headlines, match-day notes and updates across your favourite sports."
+    />
+    <title>SPORTSCENTRAL — The sports desk</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to the main content</a>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="SportsCentral home"
+        ><span class="brand-mark">SC</span
+        ><span>SPORTS<span class="brand-light">CENTRAL</span></span></a
+      >
+      <nav aria-label="Main navigation">
+        <a href="#updates">Latest</a><a href="#sports">Sports</a
+        ><a href="#about">About</a>
+      </nav>
+      <span class="live-label"
+        ><span class="live-dot"></span> YOUR SPORTS DESK</span
+      >
+    </header>
+
+    <main id="main">
+      <section class="hero" id="top">
+        <div class="hero-copy">
+          <p class="eyebrow">THE GAME NEVER STOPS</p>
+          <h1>Every sport.<br /><span>Every story.</span></h1>
+          <p class="hero-intro">
+            Your front-row seat to the latest talking points, match-day moments
+            and stories from the world of sport.
+          </p>
+          <a class="hero-link" href="#updates"
+            >Explore updates <span aria-hidden="true">↓</span></a
+          >
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="orbit orbit-one"></div>
+          <div class="orbit orbit-two"></div>
+          <div class="hero-ball">⚽</div>
+          <span class="art-tag tag-one">MATCH DAY</span
+          ><span class="art-tag tag-two">ALL ACCESS</span
+          ><span class="art-number">01<br />— 05</span>
+        </div>
+      </section>
+
+      <section class="ticker" aria-label="Sports categories">
+        <span>FOOTBALL</span><b>✳</b><span>BASKETBALL</span><b>✳</b
+        ><span>FORMULA 1</span><b>✳</b><span>ATHLETICS</span><b>✳</b
+        ><span>MORE SPORT</span>
+      </section>
+
+      <section
+        class="updates-section"
+        id="updates"
+        aria-labelledby="updates-title"
+      >
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">THE LATEST</p>
+            <h2 id="updates-title">On the scoreboard<span>.</span></h2>
+          </div>
+          <p class="section-note">
+            Fresh stories from across the sporting world.
+          </p>
+        </div>
+        <div class="filters" id="sports" aria-label="Filter updates by sport">
+          <button
+            class="filter active"
+            type="button"
+            data-filter="All"
+            aria-pressed="true"
+          >
+            All updates</button
+          ><button
+            class="filter"
+            type="button"
+            data-filter="Football"
+            aria-pressed="false"
+          >
+            ⚽ Football</button
+          ><button
+            class="filter"
+            type="button"
+            data-filter="Basketball"
+            aria-pressed="false"
+          >
+            🏀 Basketball</button
+          ><button
+            class="filter"
+            type="button"
+            data-filter="Formula 1"
+            aria-pressed="false"
+          >
+            🏎️ Formula 1</button
+          ><button
+            class="filter"
+            type="button"
+            data-filter="Athletics"
+            aria-pressed="false"
+          >
+            🏃 Athletics
+          </button>
+        </div>
+        <p
+          id="items-status"
+          class="status"
+          role="status"
+          aria-live="polite"
+        ></p>
+        <div
+          id="items-list"
+          class="updates-grid"
+          aria-label="Sports updates"
+        ></div>
+      </section>
+
+      <section class="about-strip" id="about">
+        <div>
+          <p class="eyebrow">BUILT FOR FANS</p>
+          <h2>Stay in the game.</h2>
+        </div>
+        <p>
+          One place to catch up on the sports, teams and competitions you
+          follow. This starter version uses clearly labelled sample updates;
+          live news feeds can be connected in a later development step.
+        </p>
+      </section>
+    </main>
+    <footer>
+      <a class="brand footer-brand" href="#top"
+        ><span class="brand-mark">SC</span
+        ><span>SPORTS<span class="brand-light">CENTRAL</span></span></a
+      >
+      <p>
+        Independent sports dashboard · Sample updates made up for this course.
+      </p>
+      <a href="#top" class="back-top">Back to top ↑</a>
+    </footer>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

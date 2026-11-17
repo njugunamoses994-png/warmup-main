@@ -1,0 +1,11 @@
+{
+  "_note": "Sample sports updates made up for this course. These are not live news or real match results.",
+  "items": [
+    {"id":1,"title":"Title race enters a crucial stretch","detail":"A sample football round-up: teams near the top prepare for a demanding run of fixtures.","sport":"Football","icon":"⚽","time":"Sample update · 2 hours ago"},
+    {"id":2,"title":"Young talents make their mark","detail":"A sample look at emerging players drawing attention during the latest league action.","sport":"Football","icon":"⚽","time":"Sample update · 4 hours ago"},
+    {"id":3,"title":"Playoff picture starts to take shape","detail":"A sample basketball briefing on the teams building momentum as the season progresses.","sport":"Basketball","icon":"🏀","time":"Sample update · 5 hours ago"},
+    {"id":4,"title":"Race weekend strategy watch","detail":"A sample motorsport explainer on tyre choices, pit windows and changing track conditions.","sport":"Formula 1","icon":"🏎️","time":"Sample update · 6 hours ago"},
+    {"id":5,"title":"Athletes target the next big meet","detail":"A sample athletics update following preparations for upcoming track and field events.","sport":"Athletics","icon":"🏃","time":"Sample update · Yesterday"},
+    {"id":6,"title":"Derby day talking points","detail":"A sample football preview looking at form, tactics and the key battles to watch.","sport":"Football","icon":"⚽","time":"Sample update · Yesterday"}
+  ]
+}

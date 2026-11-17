@@ -1,0 +1,18 @@
+{
+  "name": "sportscentral-individual",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Individual sports updates dashboard built from the Trailblazer starter",
+  "type": "module",
+  "scripts": {
+    "start": "node .devcontainer/preview-server.js",
+    "test": "node --test",
+    "privacy-check": "node scripts/privacy-check.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "http-server": "14.1.1"
+  }
+}
