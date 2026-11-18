@@ -2,6 +2,7 @@
 // It never shows hidden files or folders (such as .git) or node_modules. `npm start` runs it.
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { readFile } from 'node:fs/promises'
 import httpServer from 'http-server'
 
 const PORT = 3000
@@ -57,6 +58,12 @@ async function getFormula1Updates() {
   return items
 }
 
+async function getOfficialSportsUpdates() {
+  const sourceFile = path.join(ROOT, 'data', 'sports-updates.json')
+  const source = JSON.parse(await readFile(sourceFile, 'utf8'))
+  return (source.items || []).filter((item) => item.sport !== 'Formula 1')
+}
+
 // True only for addresses inside the repository that are not hidden
 export function isAllowed(requestTarget) {
   // Exactly one slash at the start, and no backslashes anywhere
@@ -108,8 +115,10 @@ export function createPreviewServer() {
         if (req.url === '/api/sports-updates.json') {
           res.setHeader('content-type', 'application/json; charset=utf-8')
           res.setHeader('cache-control', 'no-cache')
-          getFormula1Updates()
-            .then((items) => res.end(JSON.stringify({ items })))
+          Promise.all([getFormula1Updates(), getOfficialSportsUpdates()])
+            .then(([formula1Items, officialItems]) => {
+              res.end(JSON.stringify({ items: [...formula1Items, ...officialItems] }))
+            })
             .catch((error) => {
               res.statusCode = 502
               res.end(JSON.stringify({
