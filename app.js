@@ -4,6 +4,12 @@ const statusLine = document.querySelector('#items-status')
 const list = document.querySelector('#items-list')
 const filters = document.querySelectorAll('[data-filter]')
 let allUpdates = []
+let lastUpdated = null
+
+function formatUpdatedTime() {
+  if (!lastUpdated) return ''
+  return `Updated ${lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+}
 
 function showStatus(kind, message) {
   statusLine.dataset.kind = kind
@@ -54,7 +60,8 @@ function renderUpdates(sport = 'All') {
     card.append(top, title, detail, meta)
     list.append(card)
   }
-  showStatus('ok', `Showing ${updates.length} ${updates.length === 1 ? 'update' : 'updates'}.`)
+  const updatedText = formatUpdatedTime()
+  showStatus('ok', `Showing ${updates.length} ${updates.length === 1 ? 'update' : 'updates'}.${updatedText ? ` ${updatedText}.` : ''}`)
 }
 
 filters.forEach((button) => {
@@ -76,6 +83,7 @@ async function showUpdates() {
     return
   }
   allUpdates = result.data
+  lastUpdated = new Date()
   renderUpdates()
 }
 

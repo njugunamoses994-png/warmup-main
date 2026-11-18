@@ -23,6 +23,8 @@ function decodeXml(value = '') {
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#039;|&apos;/g, "'")
+    .replace(/&#x27;/gi, "'")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
     .trim()
 }
 
@@ -78,7 +80,12 @@ async function getWorldAthleticsUpdates() {
 
   for (const match of matches) {
     const title = decodeXml(match[2]).replace(/\s+/g, ' ').trim()
-    if (!title || title.length < 8 || items.some((item) => item.title === title)) continue
+    if (
+      !title ||
+      title.length < 8 ||
+      /^read more$/i.test(title) ||
+      items.some((item) => item.title === title)
+    ) continue
     items.push({
       id: `world-athletics-${items.length + 1}`,
       title,
