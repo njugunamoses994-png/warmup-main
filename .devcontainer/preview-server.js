@@ -259,11 +259,17 @@ export function createPreviewServer() {
           res.end('Not found')
           return
         }
-        if (req.url === '/api/sports-updates.json') {
+        const requestUrl = new URL(req.url, 'http://localhost')
+        if (requestUrl.pathname === '/api/sports-updates.json') {
           res.setHeader('content-type', 'application/json; charset=utf-8')
           res.setHeader('cache-control', 'no-cache')
           const now = Date.now()
-          if (sportsFeedCache && now - sportsFeedCacheTime < 5 * 60 * 1000) {
+          const forceRefresh = requestUrl.searchParams.get('refresh') === '1'
+          if (forceRefresh) {
+            sportsFeedCache = null
+            feedCache = null
+          }
+          if (!forceRefresh && sportsFeedCache && now - sportsFeedCacheTime < 5 * 60 * 1000) {
             res.end(JSON.stringify({ items: sportsFeedCache }))
             return
           }

@@ -3,8 +3,12 @@ import { getSportsUpdates } from './src/service.js'
 const statusLine = document.querySelector('#items-status')
 const list = document.querySelector('#items-list')
 const filters = document.querySelectorAll('[data-filter]')
+const refreshButton = document.querySelector('#refresh-updates')
+const refreshInterval = 5 * 60 * 1000
 let allUpdates = []
 let lastUpdated = null
+let selectedSport = 'All'
+let isRefreshing = false
 
 function formatUpdatedTime() {
   if (!lastUpdated) return ''
@@ -16,7 +20,7 @@ function showStatus(kind, message) {
   statusLine.textContent = message
 }
 
-function renderUpdates(sport = 'All') {
+function renderUpdates(sport = selectedSport) {
   const updates = sport === 'All' ? allUpdates : allUpdates.filter((item) => item.sport === sport)
   list.replaceChildren()
 
@@ -66,31 +70,53 @@ function renderUpdates(sport = 'All') {
 
 filters.forEach((button) => {
   button.addEventListener('click', () => {
+    selectedSport = button.dataset.filter
     filters.forEach((filter) => {
       const selected = filter === button
       filter.classList.toggle('active', selected)
       filter.setAttribute('aria-pressed', String(selected))
     })
-    renderUpdates(button.dataset.filter)
+    renderUpdates(selectedSport)
   })
 })
 
-async function showUpdates() {
-  showStatus('loading', 'Loading sports updates…')
-  const result = await getSportsUpdates()
-  if (!result.ok) {
-    showStatus('error', result.error.message)
-    return
+async function showUpdates(force = false) {
+  if (isRefreshing) return
+  isRefreshing = true
+  refreshButton.disabled = true
+  refreshButton.textContent = 'Refreshing…'
+  if (allUpdates.length === 0) showStatus('loading', 'Loading sports updates…')
+
+  try {
+    const result = await getSportsUpdates(fetch, { force })
+    if (!result.ok) {
+      showStatus('error', allUpdates.length
+        ? `Could not refresh updates. Showing the previous updates. ${result.error.message}`
+        : result.error.message)
+      return
+    }
+    allUpdates = result.data
+    lastUpdated = new Date()
+    renderUpdates(selectedSport)
+  } catch (error) {
+    showStatus('error', allUpdates.length
+      ? 'Could not refresh updates. Showing the previous updates.'
+      : 'Could not load sports updates. Please try again.')
+    console.error('Sports updates refresh failed:', error)
+  } finally {
+    isRefreshing = false
+    refreshButton.disabled = false
+    refreshButton.textContent = 'Refresh updates'
   }
-  allUpdates = result.data
-  lastUpdated = new Date()
-  renderUpdates()
 }
 
-showUpdates()
+refreshButton.addEventListener('click', () => showUpdates(true))
+showUpdates(true)
 
-setInterval(showUpdates, 5 * 60 * 1000)
+setInterval(() => showUpdates(true), refreshInterval)
 
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) showUpdates()
+  if (!document.hidden && (!lastUpdated || Date.now() - lastUpdated.getTime() >= refreshInterval)) {
+    showUpdates(true)
+  }
 })

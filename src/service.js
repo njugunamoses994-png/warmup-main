@@ -53,9 +53,9 @@ export async function getItems(fetchFn = fetch) {
 // ---------------------------------------------------------------
 
 // Loads the sports dashboard data. fetchFn can be replaced in tests.
-export async function getSportsUpdates(fetchFn = fetch) {
+export async function getSportsUpdates(fetchFn = fetch, { force = false } = {}) {
   try {
-    const liveResponse = await fetchFn('./api/sports-updates.json')
+    const liveResponse = await fetchFn(`./api/sports-updates.json${force ? '?refresh=1' : ''}`)
     if (liveResponse.ok) {
       const liveBody = await liveResponse.json()
       if (liveBody && Array.isArray(liveBody.items) && liveBody.items.length > 0) {

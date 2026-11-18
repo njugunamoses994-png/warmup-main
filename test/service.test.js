@@ -58,6 +58,21 @@ test('getSportsUpdates prefers live Formula 1 updates', async () => {
   assert.deepEqual(result.data, liveItems)
 })
 
+test('getSportsUpdates can force a fresh official feed request', async () => {
+  let requestedUrl
+  const fetchFn = (url) => {
+    requestedUrl = url
+    return Promise.resolve(new Response(JSON.stringify({
+      items: [{ title: 'Fresh headline', detail: 'Latest official update.', sport: 'Basketball' }],
+    }), { status: 200 }))
+  }
+
+  const result = await getSportsUpdates(fetchFn, { force: true })
+
+  assert.equal(result.ok, true)
+  assert.equal(requestedUrl, './api/sports-updates.json?refresh=1')
+})
+
 test('getSportsUpdates falls back to the static source directory', async () => {
   const fetchFn = async (url) => {
     if (url.includes('/api/')) return new Response('Unavailable', { status: 502 })
