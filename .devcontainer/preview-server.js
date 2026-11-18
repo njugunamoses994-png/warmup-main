@@ -8,6 +8,9 @@ import httpServer from 'http-server'
 const PORT = 3000
 const ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
 const F1_FEED = 'https://www.formula1.com/en/latest/all.xml'
+const WORLD_ATHLETICS_NEWS = 'https://worldathletics.org/news'
+const PREMIER_LEAGUE_NEWS = 'https://www.premierleague.com/en/news'
+const NBA_SCOREBOARD = 'https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json'
 let feedCache = null
 let feedCacheTime = 0
 
@@ -64,6 +67,90 @@ async function getOfficialSportsUpdates() {
   return (source.items || []).filter((item) => item.sport !== 'Formula 1')
 }
 
+async function getWorldAthleticsUpdates() {
+  const response = await fetch(WORLD_ATHLETICS_NEWS, {
+    headers: { 'user-agent': 'SportsCentral/1.0' },
+  })
+  if (!response.ok) throw new Error(`World Athletics answered with status ${response.status}`)
+  const html = await response.text()
+  const matches = [...html.matchAll(/<a[^>]+href="(\/[^"#]*\/news\/[^"#]+)"[^>]*>([\s\S]*?)<\/a>/gi)]
+  const items = []
+
+  for (const match of matches) {
+    const title = decodeXml(match[2]).replace(/\s+/g, ' ').trim()
+    if (!title || title.length < 8 || items.some((item) => item.title === title)) continue
+    items.push({
+      id: `world-athletics-${items.length + 1}`,
+      title,
+      detail: `Read this official World Athletics news story from ${title}.`,
+      sport: 'Athletics',
+      icon: '🏃',
+      time: 'Official World Athletics',
+      source: 'World Athletics',
+      sourceUrl: `https://worldathletics.org${match[1].split('?')[0]}`,
+    })
+    if (items.length === 3) break
+  }
+  return items
+}
+
+async function getPremierLeagueUpdates() {
+  const response = await fetch(PREMIER_LEAGUE_NEWS, {
+    headers: { 'user-agent': 'SportsCentral/1.0' },
+  })
+  if (!response.ok) throw new Error(`Premier League answered with status ${response.status}`)
+  const html = await response.text()
+  const matches = [...html.matchAll(/<a[^>]+href="(\/en\/news\/[^"#]+)"[^>]*>([\s\S]*?)<\/a>/gi)]
+  const items = []
+
+  for (const match of matches) {
+    const title = decodeXml(match[2]).replace(/\s+/g, ' ').trim()
+    if (!title || title.length < 8 || items.some((item) => item.title === title)) continue
+    items.push({
+      id: `premier-league-${items.length + 1}`,
+      title,
+      detail: 'Official Premier League news, reports and competition updates.',
+      sport: 'Football',
+      icon: '⚽',
+      time: 'Official Premier League',
+      source: 'Premier League',
+      sourceUrl: `https://www.premierleague.com${match[1].split('?')[0]}`,
+    })
+    if (items.length === 3) break
+  }
+  return items
+}
+
+async function getNbaUpdates() {
+  const response = await fetch(NBA_SCOREBOARD, {
+    headers: { 'user-agent': 'SportsCentral/1.0' },
+  })
+  if (!response.ok) throw new Error(`NBA scoreboard answered with status ${response.status}`)
+  const body = await response.json()
+  const games = body?.scoreboard?.games || []
+
+  return games.slice(0, 3).map((game, index) => {
+    const home = game.homeTeam?.teamName || 'Home'
+    const away = game.awayTeam?.teamName || 'Away'
+    const homeScore = game.homeTeam?.score
+    const awayScore = game.awayTeam?.score
+    const score = Number.isInteger(homeScore) && Number.isInteger(awayScore)
+      ? `${away} ${awayScore} - ${homeScore} ${home}`
+      : `${away} at ${home}`
+
+    return {
+      id: `nba-${game.gameId || index + 1}`,
+      title: score,
+      detail: 'Official NBA live scoreboard update.',
+      sport: 'Basketball',
+      icon: '🏀',
+      time: game.gameStatusText || 'Official NBA scoreboard',
+      source: 'NBA',
+      sourceUrl: 'https://www.nba.com/games',
+    }
+  })
+}
+
 // True only for addresses inside the repository that are not hidden
 export function isAllowed(requestTarget) {
   // Exactly one slash at the start, and no backslashes anywhere
@@ -115,9 +202,40 @@ export function createPreviewServer() {
         if (req.url === '/api/sports-updates.json') {
           res.setHeader('content-type', 'application/json; charset=utf-8')
           res.setHeader('cache-control', 'no-cache')
-          Promise.all([getFormula1Updates(), getOfficialSportsUpdates()])
-            .then(([formula1Items, officialItems]) => {
-              res.end(JSON.stringify({ items: [...formula1Items, ...officialItems] }))
+          Promise.allSettled([
+            getFormula1Updates(),
+            getOfficialSportsUpdates(),
+            getWorldAthleticsUpdates(),
+            getPremierLeagueUpdates(),
+            getNbaUpdates(),
+          ])
+            .then((results) => {
+              const formula1Items = results[0].status === 'fulfilled' ? results[0].value : []
+              const officialItems = results[1].status === 'fulfilled' ? results[1].value : []
+              const athleticsItems = results[2].status === 'fulfilled' ? results[2].value : []
+              const footballItems = results[3].status === 'fulfilled' ? results[3].value : []
+              const basketballItems = results[4].status === 'fulfilled' ? results[4].value : []
+              const otherOfficialItems = officialItems.filter((item) =>
+                item.sport !== 'Athletics' &&
+                item.sport !== 'Football' &&
+                item.sport !== 'Basketball' &&
+                item.source !== 'Premier League'
+              )
+              const fallbackItems = officialItems.filter((item) =>
+                (item.sport === 'Athletics' && athleticsItems.length === 0) ||
+                (item.sport === 'Football' && footballItems.length === 0) ||
+                (item.sport === 'Basketball' && basketballItems.length === 0)
+              )
+              res.end(JSON.stringify({
+                items: [
+                  ...formula1Items,
+                  ...footballItems,
+                  ...athleticsItems,
+                  ...basketballItems,
+                  ...otherOfficialItems,
+                  ...fallbackItems,
+                ],
+              }))
             })
             .catch((error) => {
               res.statusCode = 502
