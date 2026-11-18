@@ -88,3 +88,9 @@ async function showUpdates() {
 }
 
 showUpdates()
+
+setInterval(showUpdates, 5 * 60 * 1000)
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) showUpdates()
+})
