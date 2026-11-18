@@ -54,6 +54,24 @@ export async function getItems(fetchFn = fetch) {
 
 // Loads the sports dashboard data. fetchFn can be replaced in tests.
 export async function getSportsUpdates(fetchFn = fetch) {
+  try {
+    const liveResponse = await fetchFn('./api/sports-updates.json')
+    if (liveResponse.ok) {
+      const liveBody = await liveResponse.json()
+      if (liveBody && Array.isArray(liveBody.items) && liveBody.items.length > 0) {
+        const liveValid = liveBody.items.every((item) =>
+          item &&
+          typeof item.title === 'string' &&
+          typeof item.detail === 'string' &&
+          typeof item.sport === 'string'
+        )
+        if (liveValid) return { ok: true, data: liveBody.items }
+      }
+    }
+  } catch {
+    // The static file below keeps the dashboard usable on GitHub Pages.
+  }
+
   let response
   try {
     response = await fetchFn('./data/sports-updates.json')

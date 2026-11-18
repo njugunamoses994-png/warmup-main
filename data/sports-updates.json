@@ -1,11 +1,11 @@
 {
-  "_note": "Sample sports updates made up for this course. These are not live news or real match results.",
+  "_note": "Static source directory used when live feeds are unavailable. No match results are fabricated.",
   "items": [
-    {"id":1,"title":"Title race enters a crucial stretch","detail":"A sample football round-up: teams near the top prepare for a demanding run of fixtures.","sport":"Football","icon":"⚽","time":"Sample update · 2 hours ago"},
-    {"id":2,"title":"Young talents make their mark","detail":"A sample look at emerging players drawing attention during the latest league action.","sport":"Football","icon":"⚽","time":"Sample update · 4 hours ago"},
-    {"id":3,"title":"Playoff picture starts to take shape","detail":"A sample basketball briefing on the teams building momentum as the season progresses.","sport":"Basketball","icon":"🏀","time":"Sample update · 5 hours ago"},
-    {"id":4,"title":"Race weekend strategy watch","detail":"A sample motorsport explainer on tyre choices, pit windows and changing track conditions.","sport":"Formula 1","icon":"🏎️","time":"Sample update · 6 hours ago"},
-    {"id":5,"title":"Athletes target the next big meet","detail":"A sample athletics update following preparations for upcoming track and field events.","sport":"Athletics","icon":"🏃","time":"Sample update · Yesterday"},
-    {"id":6,"title":"Derby day talking points","detail":"A sample football preview looking at form, tactics and the key battles to watch.","sport":"Football","icon":"⚽","time":"Sample update · Yesterday"}
+    {"id":1,"title":"FIFA football news","detail":"Visit FIFA for official tournament news, match reports and global football updates.","sport":"Football","icon":"⚽","time":"Official FIFA website","source":"FIFA","sourceUrl":"https://www.fifa.com/en/news"},
+    {"id":2,"title":"Premier League updates","detail":"Follow fixtures, results, standings and club news from the English Premier League.","sport":"Football","icon":"⚽","time":"Official Premier League","source":"Premier League","sourceUrl":"https://www.premierleague.com/news"},
+    {"id":3,"title":"NBA news and scores","detail":"Read league news and check schedules, standings and scores on the official NBA website.","sport":"Basketball","icon":"🏀","time":"Official NBA website","source":"NBA","sourceUrl":"https://www.nba.com/news"},
+    {"id":4,"title":"Latest Formula 1 news","detail":"Live headlines are sourced from Formula 1's official RSS feed; open the Formula 1 news desk for full coverage.","sport":"Formula 1","icon":"🏎️","time":"Official Formula 1","source":"Formula 1","sourceUrl":"https://www.formula1.com/en/latest"},
+    {"id":5,"title":"World Athletics news","detail":"Official competition reports, athlete stories and results from World Athletics.","sport":"Athletics","icon":"🏃","time":"Official World Athletics","source":"World Athletics","sourceUrl":"https://worldathletics.org/news"},
+    {"id":6,"title":"UEFA football news","detail":"Read official European football news, match coverage and competition updates from UEFA.","sport":"Football","icon":"⚽","time":"Official UEFA website","source":"UEFA","sourceUrl":"https://www.uefa.com/news-media/news/"}
   ]
 }

@@ -6,6 +6,56 @@ import httpServer from 'http-server'
 
 const PORT = 3000
 const ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
+const F1_FEED = 'https://www.formula1.com/en/latest/all.xml'
+let feedCache = null
+let feedCacheTime = 0
+
+function decodeXml(value = '') {
+  return value
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;|&apos;/g, "'")
+    .trim()
+}
+
+function itemValue(xml, name) {
+  const match = xml.match(new RegExp(`<${name}(?:[^>]*)>([\\s\\S]*?)<\\/${name}>`, 'i'))
+  return match ? decodeXml(match[1]) : ''
+}
+
+async function getFormula1Updates() {
+  const now = Date.now()
+  if (feedCache && now - feedCacheTime < 5 * 60 * 1000) return feedCache
+
+  const response = await fetch(F1_FEED, {
+    headers: { 'user-agent': 'SportsCentral/1.0' },
+  })
+  if (!response.ok) throw new Error(`Formula 1 feed answered with status ${response.status}`)
+
+  const xml = await response.text()
+  const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/gi)]
+    .slice(0, 6)
+    .map((match, index) => ({
+      id: `f1-live-${index + 1}`,
+      title: itemValue(match[1], 'title'),
+      detail: itemValue(match[1], 'description'),
+      sport: 'Formula 1',
+      icon: '🏎️',
+      time: 'Official Formula 1',
+      source: 'Formula 1',
+      sourceUrl: itemValue(match[1], 'link'),
+    }))
+    .filter((item) => item.title && item.detail && item.sourceUrl)
+
+  if (items.length === 0) throw new Error('Formula 1 feed contained no updates')
+  feedCache = items
+  feedCacheTime = now
+  return items
+}
 
 // True only for addresses inside the repository that are not hidden
 export function isAllowed(requestTarget) {
@@ -53,6 +103,22 @@ export function createPreviewServer() {
         if (!isAllowed(req.url)) {
           res.statusCode = 404
           res.end('Not found')
+          return
+        }
+        if (req.url === '/api/sports-updates.json') {
+          res.setHeader('content-type', 'application/json; charset=utf-8')
+          res.setHeader('cache-control', 'no-cache')
+          getFormula1Updates()
+            .then((items) => res.end(JSON.stringify({ items })))
+            .catch((error) => {
+              res.statusCode = 502
+              res.end(JSON.stringify({
+                error: {
+                  code: 'LIVE_FEED_UNAVAILABLE',
+                  message: error.message,
+                },
+              }))
+            })
           return
         }
         res.emit('next')

@@ -38,8 +38,16 @@ function renderUpdates(sport = 'All') {
     detail.textContent = item.detail
     const meta = document.createElement('div')
     meta.className = 'card-meta'
-    const label = document.createElement('span')
-    label.textContent = 'SPORTSCENTRAL'
+    const label = item.sourceUrl
+      ? document.createElement('a')
+      : document.createElement('span')
+    label.textContent = item.source || 'SPORTSCENTRAL'
+    if (item.sourceUrl) {
+      label.href = item.sourceUrl
+      label.target = '_blank'
+      label.rel = 'noopener noreferrer'
+      label.setAttribute('aria-label', `Read at ${item.source || 'official sports website'} (opens in a new tab)`)
+    }
     const time = document.createElement('span')
     time.textContent = item.time || 'Sample update'
     meta.append(label, time)
