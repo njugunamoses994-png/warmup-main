@@ -13,6 +13,8 @@ const PREMIER_LEAGUE_NEWS = 'https://www.premierleague.com/en/news'
 const NBA_SCOREBOARD = 'https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json'
 let feedCache = null
 let feedCacheTime = 0
+let sportsFeedCache = null
+let sportsFeedCacheTime = 0
 
 function decodeXml(value = '') {
   return value
@@ -102,60 +104,111 @@ async function getWorldAthleticsUpdates() {
 }
 
 async function getPremierLeagueUpdates() {
-  const response = await fetch(PREMIER_LEAGUE_NEWS, {
-    headers: { 'user-agent': 'SportsCentral/1.0' },
-  })
-  if (!response.ok) throw new Error(`Premier League answered with status ${response.status}`)
-  const html = await response.text()
-  const matches = [...html.matchAll(/<a[^>]+href="(\/en\/news\/[^"#]+)"[^>]*>([\s\S]*?)<\/a>/gi)]
-  const items = []
+  try {
+    const fixtureResponse = await fetch(
+      'https://footballapi.pulselive.com/football/fixtures?comp=1&compSeasons=719&page=0&pageSize=6&sort=desc&statuses=C&altIds=true&detail=2',
+      { headers: { 'origin': 'https://www.premierleague.com', 'user-agent': 'SportsCentral/1.0' } }
+    )
+    if (fixtureResponse.ok) {
+      const fixtureBody = await fixtureResponse.json()
+      const fixtureItems = (fixtureBody.content || []).slice(0, 3).map((fixture, index) => {
+        const homeTeam = fixture.teams?.[0]?.team
+        const awayTeam = fixture.teams?.[1]?.team
+        const home = homeTeam?.club?.name || homeTeam?.name || 'Home'
+        const away = awayTeam?.club?.name || awayTeam?.name || 'Away'
+        const homeScore = fixture.teams?.[0]?.score
+        const awayScore = fixture.teams?.[1]?.score
+        const score = Number.isFinite(homeScore) && Number.isFinite(awayScore)
+          ? `${home} ${homeScore} - ${awayScore} ${away}`
+          : `${home} v ${away}`
+        return {
+          id: `premier-league-live-${index + 1}`,
+          title: score,
+          detail: 'Official Premier League match result.',
+          sport: 'Football',
+          icon: '⚽',
+          time: 'Official Premier League',
+          source: 'Premier League',
+          sourceUrl: 'https://www.premierleague.com/en/matches',
+        }
+      })
+      if (fixtureItems.length > 0) return fixtureItems
+    }
+  } catch {
+    // Try the official news pages below.
+  }
 
-  for (const match of matches) {
-    const title = decodeXml(match[2]).replace(/\s+/g, ' ').trim()
-    if (!title || title.length < 8 || items.some((item) => item.title === title)) continue
-    items.push({
-      id: `premier-league-${items.length + 1}`,
-      title,
-      detail: 'Official Premier League news, reports and competition updates.',
-      sport: 'Football',
-      icon: '⚽',
-      time: 'Official Premier League',
-      source: 'Premier League',
-      sourceUrl: `https://www.premierleague.com${match[1].split('?')[0]}`,
-    })
+  const urls = [
+    'https://www.uefa.com/news-media/news/',
+    'https://www.fifa.com/en/news',
+    PREMIER_LEAGUE_NEWS,
+  ]
+  const items = []
+  const excludedTitles = /^(features|media services|publications|regulations|documents|news|latest|read more)$/i
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, { headers: { 'user-agent': 'SportsCentral/1.0' } })
+      if (!response.ok) continue
+      const html = await response.text()
+      const origin = new URL(url).origin
+      const matches = [...html.matchAll(/<a[^>]+(?:href|url)="([^"]*(?:news|article|articles)[^"]*)"[^>]*(?:title="([^"]*)")?[^>]*>([\s\S]*?)<\/a>/gi)]
+      for (const match of matches) {
+        let title = match[2] || decodeXml(match[3])
+        title = title.replace(/\s+/g, ' ').trim()
+        if (
+          !title ||
+          title.length < 8 ||
+          excludedTitles.test(title) ||
+          items.some((item) => item.title === title)
+        ) continue
+        let sourceUrl = match[1].startsWith('http') ? match[1] : new URL(match[1], origin).href
+        if (/\/(?:news-media\/(?:stories|mediaservices|publications|news\/?)|en\/news\/?)$/i.test(sourceUrl)) continue
+        let source = url.includes('uefa.com') ? 'UEFA' : url.includes('fifa.com') ? 'FIFA' : 'Premier League'
+        items.push({
+          id: `football-live-${items.length + 1}`,
+          title,
+          detail: `Official football update from ${source}.`,
+          sport: 'Football',
+          icon: '⚽',
+          time: `Official ${source}`,
+          source,
+          sourceUrl,
+        })
+        if (items.length === 3) break
+      }
+    } catch {
+      // Try the next official football website.
+    }
     if (items.length === 3) break
   }
   return items
 }
 
 async function getNbaUpdates() {
-  const response = await fetch(NBA_SCOREBOARD, {
+  const response = await fetch('https://www.nba.com/news', {
     headers: { 'user-agent': 'SportsCentral/1.0' },
   })
-  if (!response.ok) throw new Error(`NBA scoreboard answered with status ${response.status}`)
-  const body = await response.json()
-  const games = body?.scoreboard?.games || []
-
-  return games.slice(0, 3).map((game, index) => {
-    const home = game.homeTeam?.teamName || 'Home'
-    const away = game.awayTeam?.teamName || 'Away'
-    const homeScore = game.homeTeam?.score
-    const awayScore = game.awayTeam?.score
-    const score = Number.isInteger(homeScore) && Number.isInteger(awayScore)
-      ? `${away} ${awayScore} - ${homeScore} ${home}`
-      : `${away} at ${home}`
-
-    return {
-      id: `nba-${game.gameId || index + 1}`,
-      title: score,
-      detail: 'Official NBA live scoreboard update.',
+  if (!response.ok) throw new Error(`NBA news answered with status ${response.status}`)
+  const html = await response.text()
+  const matches = [...html.matchAll(/"type":"post","name":"([^"]+)".{0,900}?"title":"([^"]+)"/gi)]
+  const items = []
+  for (const match of matches) {
+    const title = decodeXml(match[2]).replace(/â€™|â€¦/g, "'").trim()
+    if (!title || items.some((item) => item.title === title)) continue
+    items.push({
+      id: `nba-${items.length + 1}`,
+      title,
+      detail: 'Official NBA news headline.',
       sport: 'Basketball',
       icon: '🏀',
-      time: game.gameStatusText || 'Official NBA scoreboard',
+      time: 'Official NBA',
       source: 'NBA',
-      sourceUrl: 'https://www.nba.com/games',
-    }
-  })
+      sourceUrl: `https://www.nba.com/news/${match[1]}`,
+    })
+    if (items.length === 6) break
+  }
+  if (items.length === 0) throw new Error('NBA news page contained no headlines')
+  return items
 }
 
 // True only for addresses inside the repository that are not hidden
@@ -209,6 +262,11 @@ export function createPreviewServer() {
         if (req.url === '/api/sports-updates.json') {
           res.setHeader('content-type', 'application/json; charset=utf-8')
           res.setHeader('cache-control', 'no-cache')
+          const now = Date.now()
+          if (sportsFeedCache && now - sportsFeedCacheTime < 5 * 60 * 1000) {
+            res.end(JSON.stringify({ items: sportsFeedCache }))
+            return
+          }
           Promise.allSettled([
             getFormula1Updates(),
             getOfficialSportsUpdates(),
@@ -233,16 +291,17 @@ export function createPreviewServer() {
                 (item.sport === 'Football' && footballItems.length === 0) ||
                 (item.sport === 'Basketball' && basketballItems.length === 0)
               )
-              res.end(JSON.stringify({
-                items: [
-                  ...formula1Items,
-                  ...footballItems,
-                  ...athleticsItems,
-                  ...basketballItems,
-                  ...otherOfficialItems,
-                  ...fallbackItems,
-                ],
-              }))
+              const items = [
+                ...formula1Items,
+                ...footballItems,
+                ...athleticsItems,
+                ...basketballItems,
+                ...otherOfficialItems,
+                ...fallbackItems,
+              ]
+              sportsFeedCache = items
+              sportsFeedCacheTime = now
+              res.end(JSON.stringify({ items }))
             })
             .catch((error) => {
               res.statusCode = 502
